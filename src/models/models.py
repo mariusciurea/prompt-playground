@@ -29,9 +29,11 @@ class PromptData(BaseModel):
 
 class ModelResponse(BaseModel):
     """Model representing an AI model's response."""
-    
+
     model_name: str = Field(..., description="Name of the AI model")
     response_text: str = Field(..., description="The generated response")
+    user_prompt: str = Field(default="", description="The user prompt that generated this response")
+    system_prompt: str = Field(default="", description="The system prompt used for this response")
     timestamp: datetime = Field(default_factory=datetime.now, description="Response timestamp")
     tokens_used: Optional[int] = Field(None, description="Number of tokens used")
     

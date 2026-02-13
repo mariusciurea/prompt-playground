@@ -134,6 +134,8 @@ class GeminiService(AIServiceInterface):
         return ModelResponse(
             model_name=self._model_name,
             response_text=response_text,
+            user_prompt=prompt_data.user_prompt,
+            system_prompt=prompt_data.system_prompt,
             timestamp=datetime.now(),
             tokens_used=tokens_used,
         )
