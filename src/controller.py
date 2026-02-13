@@ -178,6 +178,10 @@ class PlaygroundController:
         else:
             st.error(UIConfig.PASSWORD_INCORRECT_MSG)
 
+    def _on_engage_toggle_user_prompt(self) -> None:
+        """Toggle user prompt visibility in engage responses."""
+        self._session_manager.toggle_engage_user_prompt_view()
+
     def run(self) -> None:
         """Run the main application loop."""
         StyleComponent.inject_styles()
@@ -203,12 +207,14 @@ class PlaygroundController:
             prompt_value=self._session_manager.get_engage_prompt(),
             responses=self._session_manager.get_engage_responses(),
             password_guess=self._session_manager.get_engage_password_guess(),
+            show_user_prompt=self._session_manager.get_engage_show_user_prompt(),
             on_level_change=self._on_engage_level_change,
             on_prompt_change=self._on_engage_prompt_change,
             on_reset=self._on_engage_reset,
             on_submit=self._on_engage_submit,
             on_password_guess_change=self._on_engage_password_guess_change,
             on_check_password=self._on_check_password,
+            on_toggle_user_prompt=self._on_engage_toggle_user_prompt,
         )
 
     def _run_playground_view(self) -> None:
@@ -254,8 +260,6 @@ class PlaygroundController:
                 show_user_prompt=self._session_manager.get_show_user_prompt(),
                 on_toggle_system=self._on_toggle_system_prompt,
                 on_toggle_user=self._on_toggle_user_prompt,
-                system_prompt=self._session_manager.get_system_prompt(),
-                user_prompt=self._session_manager.get_user_prompt(),
             )
 
 
