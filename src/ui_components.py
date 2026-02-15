@@ -196,11 +196,12 @@ class ResponseDisplayComponent:
             )
             return
 
-        # Responses list
-        for idx, response in enumerate(responses):
+        # Responses list (reversed order)
+        for idx, response in enumerate(reversed(responses)):
+            response_num = len(responses) - idx
             with st.container():
                 st.markdown(
-                    f'<span class="response-badge">#{idx + 1}</span> '
+                    f'<span class="response-badge">#{response_num}</span> '
                     f"**{response.model_name}**",
                     unsafe_allow_html=True,
                 )
@@ -366,10 +367,11 @@ class EngageModeComponent:
                     "No responses yet. Enter a prompt and click Submit to generate responses."
                 )
             else:
-                for idx, response in enumerate(responses):
+                for idx, response in enumerate(reversed(responses)):
+                    response_num = len(responses) - idx
                     with st.container():
                         st.markdown(
-                            f'<span class="response-badge">#{idx + 1}</span> '
+                            f'<span class="response-badge">#{response_num}</span> '
                             f"**{response.model_name}**",
                             unsafe_allow_html=True,
                         )
