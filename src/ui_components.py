@@ -24,43 +24,40 @@ class HeaderComponent:
         current_view: str = "playground",
         on_engage_click: Optional[Callable[[], None]] = None,
         on_playground_click: Optional[Callable[[], None]] = None,
+        on_reservation_click: Optional[Callable[[], None]] = None,
         on_documentation_click: Optional[Callable[[], None]] = None,
     ) -> None:
         """Render the application header with title and navigation."""
-        if current_view == "engage":
-            st.markdown(
-                '<p class="app-title"><span class="accent">Engage</span></p>',
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                f'<p class="app-title">AI <span class="accent">Playground</span>'
-                f' <span class="title-model">— {GEMINI_MODEL_NAME}</span></p>',
-                unsafe_allow_html=True,
-            )
+        titles = {
+            "engage": '<p class="app-title"><span class="accent">Engage</span></p>',
+            "reservation": '<p class="app-title">Event <span class="accent">Reservation</span></p>',
+        }
+        default_title = (
+            f'<p class="app-title">AI <span class="accent">Playground</span>'
+            f' <span class="title-model">— {GEMINI_MODEL_NAME}</span></p>'
+        )
+        st.markdown(titles.get(current_view, default_title), unsafe_allow_html=True)
 
-        # Nav buttons styled as compact inline pills
+        # Nav buttons
         st.markdown('<div class="nav-bar">', unsafe_allow_html=True)
-        c1, c2, c3 = st.columns([2, 2, 8])
+        c1, c2, c3, c4 = st.columns([2, 2, 2, 6])
         with c1:
-            if st.button(
-                UIConfig.DOCUMENTATION_BUTTON,
-                key="doc_button",
-            ) and on_documentation_click:
+            if st.button(UIConfig.DOCUMENTATION_BUTTON, key="doc_button") and on_documentation_click:
                 on_documentation_click()
         with c2:
             if current_view == "engage":
-                if st.button(
-                    UIConfig.PLAYGROUND_BUTTON,
-                    key="playground_button",
-                ) and on_playground_click:
+                if st.button(UIConfig.PLAYGROUND_BUTTON, key="playground_button") and on_playground_click:
                     on_playground_click()
             else:
-                if st.button(
-                    UIConfig.ENGAGE_BUTTON,
-                    key="engage_button",
-                ) and on_engage_click:
+                if st.button(UIConfig.ENGAGE_BUTTON, key="engage_button") and on_engage_click:
                     on_engage_click()
+        with c3:
+            if current_view == "reservation":
+                if st.button(UIConfig.PLAYGROUND_BUTTON, key="back_playground_button") and on_playground_click:
+                    on_playground_click()
+            else:
+                if st.button(UIConfig.RESERVATION_BUTTON, key="reservation_button") and on_reservation_click:
+                    on_reservation_click()
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown("---")
@@ -379,6 +376,19 @@ class EngageModeComponent:
                             )
 
                         st.markdown("---")
+
+
+class ReservationChatComponent:
+    """Chat UI for the Event Reservation agent."""
+
+    @staticmethod
+    def render(messages: list[dict]) -> None:
+        """Render conversation history using Streamlit chat elements."""
+        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+        for msg in messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 class StyleComponent:

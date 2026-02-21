@@ -116,8 +116,10 @@ class GeminiService(AIServiceInterface):
 
         model = genai.GenerativeModel(GEMINI_MODEL_ID, **model_kwargs)
         response = model.generate_content(prompt_data.user_prompt)
+        print(response)
 
         response_text = _extract_text_safely(response)
+        print(response_text)
         tokens_used = None
 
         if hasattr(response, "usage_metadata") and response.usage_metadata:

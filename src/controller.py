@@ -16,7 +16,8 @@ from src.ui_components import (
     ActionButtonsComponent,
     ResponseDisplayComponent,
     EngageModeComponent,
-    StyleComponent
+    ReservationChatComponent,
+    StyleComponent,
 )
 import streamlit as st
 
@@ -132,6 +133,24 @@ class PlaygroundController:
         self._session_manager.set_view_mode("playground")
         st.rerun()
 
+    def _on_reservation_click(self) -> None:
+        """Switch to Event Reservation view."""
+        self._session_manager.set_view_mode("reservation")
+        st.rerun()
+
+    # ---- Reservation agent helpers ----
+
+    def _get_reservation_agent(self):
+        """Lazily initialize the reservation agent service (cached in session state)."""
+        if "reservation_agent" not in st.session_state:
+            try:
+                from src.agent.agent import ReservationAgentService
+                st.session_state.reservation_agent = ReservationAgentService()
+            except Exception as e:
+                st.session_state.reservation_agent = None
+                st.session_state.reservation_agent_error = str(e)
+        return st.session_state.reservation_agent
+
     def _on_engage_level_change(self, level: int) -> None:
         """Handle engage level change."""
         self._session_manager.set_engage_level(level)
@@ -214,15 +233,17 @@ class PlaygroundController:
 
         view_mode = self._session_manager.get_view_mode()
 
-        # render header with view switching
         HeaderComponent.render(
             current_view=view_mode,
             on_engage_click=self._on_engage_click,
             on_playground_click=self._on_playground_click,
+            on_reservation_click=self._on_reservation_click,
         )
 
         if view_mode == "engage":
             self._run_engage_view()
+        elif view_mode == "reservation":
+            self._run_reservation_view()
         else:
             self._run_playground_view()
 
@@ -248,6 +269,36 @@ class PlaygroundController:
 
         if is_generating:
             self._process_engage_generation()
+
+    def _run_reservation_view(self) -> None:
+        """Render the Event Reservation chat view."""
+        agent = self._get_reservation_agent()
+
+        if agent is None:
+            error = st.session_state.get("reservation_agent_error", "Unknown error")
+            st.error(f"Could not initialize reservation agent: {error}")
+            return
+
+        ReservationChatComponent.render(
+            self._session_manager.get_reservation_messages()
+        )
+
+        user_input = st.chat_input("Type your message...")
+        if user_input:
+            self._session_manager.add_reservation_message("user", user_input)
+            with st.chat_message("user"):
+                st.markdown(user_input)
+
+            with st.chat_message("assistant"):
+                with st.spinner("Thinking..."):
+                    try:
+                        reply = agent.send_message(user_input)
+                    except Exception as e:
+                        reply = f"Error: {e}"
+                    st.markdown(reply)
+
+            self._session_manager.add_reservation_message("assistant", reply)
+            st.rerun()
 
     def _run_playground_view(self) -> None:
         """Render the main Playground view."""
