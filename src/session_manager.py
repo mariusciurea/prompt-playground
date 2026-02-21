@@ -61,6 +61,10 @@ class SessionStateManager:
         if "is_generating" not in st.session_state:
             st.session_state.is_generating = False
 
+        # Reservation chat state
+        if "reservation_messages" not in st.session_state:
+            st.session_state.reservation_messages = []
+
     def get_system_prompt(self) -> str:
         """Get the current system prompt from session state."""
         return st.session_state.system_prompt
@@ -178,3 +182,16 @@ class SessionStateManager:
 
     def set_is_generating(self, value: bool) -> None:
         st.session_state.is_generating = value
+
+    # ---- Reservation chat ----
+
+    def get_reservation_messages(self) -> list[dict]:
+        return st.session_state.reservation_messages
+
+    def add_reservation_message(self, role: str, content: str) -> None:
+        st.session_state.reservation_messages.append(
+            {"role": role, "content": content}
+        )
+
+    def clear_reservation_messages(self) -> None:
+        st.session_state.reservation_messages = []

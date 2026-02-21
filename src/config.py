@@ -26,6 +26,7 @@ class UIConfig:
     DOCUMENTATION_BUTTON = "Documentation"
     ENGAGE_BUTTON = "Engage"
     PLAYGROUND_BUTTON = "Playground"
+    RESERVATION_BUTTON = "Reservation"
     CHECK_PASSWORD_BUTTON = "Check password"
 
     # Section headers
@@ -329,6 +330,16 @@ div[data-testid="stHorizontalBlock"]:has(button[data-testid="stBaseButton-second
 
 /* ---------- selectbox ---------- */
 .stSelectbox > div > div { border-radius: 10px; }
+
+/* ---------- chat area ---------- */
+.chat-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+.stChatMessage {
+    border-radius: 12px;
+    font-size: 0.93rem;
+}
 </style>
 """
 
