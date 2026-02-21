@@ -12,7 +12,6 @@ from src.models.models import PromptData, ModelResponse
 from src.config import UIConfig
 from src.ui_components import (
     HeaderComponent,
-    ModelLabelComponent,
     PromptInputComponent,
     ActionButtonsComponent,
     ResponseDisplayComponent,
@@ -73,33 +72,47 @@ class PlaygroundController:
         st.rerun()
     
     def _on_submit(self) -> None:
-        """Handle submit button click."""
-        system_prompt = self._session_manager.get_system_prompt()
-        user_prompt = self._session_manager.get_user_prompt()
-        
-        if self._ai_service is None and self._ai_service_error:
-            st.error(self._ai_service_error)
+        """on_click callback: validate, save prompt, set generating flag.
+
+        Runs BEFORE the script body so the next render sees disabled buttons
+        and a cleared text area.
+        """
+        user_prompt = st.session_state.get("user_prompt_input", "").strip()
+        if not user_prompt:
+            return
+        if self._ai_service is None:
             return
 
-        if not user_prompt.strip():
-            st.warning("Please enter a user prompt before submitting.")
+        st.session_state._pending_user_prompt = user_prompt
+        st.session_state._pending_system_prompt = st.session_state.get(
+            "system_prompt_input", ""
+        )
+        self._session_manager.set_user_prompt("")
+        st.session_state.user_prompt_input = ""
+        self._session_manager.set_is_generating(True)
+
+    def _process_playground_generation(self) -> None:
+        """Run the actual LLM call after the UI has rendered."""
+        user_prompt = st.session_state.pop("_pending_user_prompt", "")
+        system_prompt = st.session_state.pop("_pending_system_prompt", "")
+
+        if not user_prompt:
+            self._session_manager.set_is_generating(False)
             return
 
-        # Create prompt data
         prompt_data = PromptData(
             system_prompt=system_prompt,
-            user_prompt=user_prompt
+            user_prompt=user_prompt,
         )
-        
-        # Generate response
         try:
             with st.spinner("Generating response..."):
                 response = self._ai_service.generate_response(prompt_data)
                 self._session_manager.add_response(response)
-            
-            st.success("Response generated successfully!")
         except Exception as e:
             st.error(f"Error generating response: {str(e)}")
+        finally:
+            self._session_manager.set_is_generating(False)
+            st.rerun()
     
     def _on_toggle_system_prompt(self) -> None:
         """Handle toggle system prompt visibility."""
@@ -135,29 +148,42 @@ class PlaygroundController:
         st.rerun()
 
     def _on_engage_submit(self) -> None:
-        """Submit prompt in Engage game."""
-        if self._ai_service is None and self._ai_service_error:
-            st.error(self._ai_service_error)
+        """on_click callback for Engage submit."""
+        user_prompt = st.session_state.get("engage_prompt_input", "").strip()
+        if not user_prompt:
             return
-
-        user_prompt = self._session_manager.get_engage_prompt()
-        if not user_prompt.strip():
-            st.warning("Please enter a prompt before submitting.")
+        if self._ai_service is None:
             return
 
         level_config = self._session_manager.get_current_level_config()
-        prompt_data = PromptData(
-            system_prompt=level_config["system_prompt"],
-            user_prompt=user_prompt
-        )
+        st.session_state._pending_engage_prompt = user_prompt
+        st.session_state._pending_engage_system = level_config["system_prompt"]
+        self._session_manager.set_engage_prompt("")
+        st.session_state.engage_prompt_input = ""
+        self._session_manager.set_is_generating(True)
 
+    def _process_engage_generation(self) -> None:
+        """Run the actual LLM call for Engage mode."""
+        user_prompt = st.session_state.pop("_pending_engage_prompt", "")
+        system_prompt = st.session_state.pop("_pending_engage_system", "")
+
+        if not user_prompt:
+            self._session_manager.set_is_generating(False)
+            return
+
+        prompt_data = PromptData(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+        )
         try:
             with st.spinner("Generating response..."):
                 response = self._ai_service.generate_response(prompt_data)
                 self._session_manager.add_engage_response(response)
-            st.success("Response generated successfully!")
         except Exception as e:
             st.error(f"Error generating response: {str(e)}")
+        finally:
+            self._session_manager.set_is_generating(False)
+            st.rerun()
 
     def _on_engage_password_guess_change(self, guess: str) -> None:
         """Handle password guess change."""
@@ -202,6 +228,8 @@ class PlaygroundController:
 
     def _run_engage_view(self) -> None:
         """Render the Engage game view."""
+        is_generating = self._session_manager.get_is_generating()
+
         EngageModeComponent.render(
             level=self._session_manager.get_engage_level(),
             prompt_value=self._session_manager.get_engage_prompt(),
@@ -215,20 +243,25 @@ class PlaygroundController:
             on_password_guess_change=self._on_engage_password_guess_change,
             on_check_password=self._on_check_password,
             on_toggle_user_prompt=self._on_engage_toggle_user_prompt,
+            disabled=is_generating,
         )
+
+        if is_generating:
+            self._process_engage_generation()
 
     def _run_playground_view(self) -> None:
         """Render the main Playground view."""
-        left_col, right_col = st.columns([1, 1])
-        
+        is_generating = self._session_manager.get_is_generating()
+
+        left_col, mid_col, right_col = st.columns([50, 1, 50])
+
+        with mid_col:
+            st.markdown('<div class="col-divider"></div>', unsafe_allow_html=True)
+
         # Left column - Input section
         with left_col:
             if self._ai_service_error:
                 st.error(self._ai_service_error)
-
-            ModelLabelComponent.render()
-
-            st.markdown("")  # Spacing
 
             # System prompt input
             PromptInputComponent.render_system_prompt(
@@ -249,18 +282,20 @@ class PlaygroundController:
             # Action buttons
             ActionButtonsComponent.render(
                 on_reset=self._on_reset,
-                on_submit=self._on_submit
+                on_submit=self._on_submit,
+                disabled=is_generating,
             )
         
         # Right column - Response section
         with right_col:
             ResponseDisplayComponent.render(
                 responses=self._session_manager.get_responses(),
-                show_system_prompt=self._session_manager.get_show_system_prompt(),
                 show_user_prompt=self._session_manager.get_show_user_prompt(),
-                on_toggle_system=self._on_toggle_system_prompt,
                 on_toggle_user=self._on_toggle_user_prompt,
             )
+
+        if is_generating:
+            self._process_playground_generation()
 
 
 def create_controller() -> PlaygroundController:
