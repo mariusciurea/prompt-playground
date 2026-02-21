@@ -27,43 +27,41 @@ class HeaderComponent:
         on_documentation_click: Optional[Callable[[], None]] = None,
     ) -> None:
         """Render the application header with title and navigation."""
-        col_title, col_spacer, col_doc, col_nav = st.columns([3, 1, 1, 1])
+        if current_view == "engage":
+            st.markdown(
+                '<p class="app-title"><span class="accent">Engage</span></p>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f'<p class="app-title">AI <span class="accent">Playground</span>'
+                f' <span class="title-model">— {GEMINI_MODEL_NAME}</span></p>',
+                unsafe_allow_html=True,
+            )
 
-        with col_title:
-            if current_view == "engage":
-                st.markdown(
-                    '<p class="app-title"><span class="accent">Engage</span></p>',
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    '<p class="app-title">AI <span class="accent">Playground</span></p>',
-                    unsafe_allow_html=True,
-                )
-
-        with col_doc:
+        # Nav buttons styled as compact inline pills
+        st.markdown('<div class="nav-bar">', unsafe_allow_html=True)
+        c1, c2, c3 = st.columns([2, 2, 8])
+        with c1:
             if st.button(
                 UIConfig.DOCUMENTATION_BUTTON,
-                use_container_width=True,
                 key="doc_button",
             ) and on_documentation_click:
                 on_documentation_click()
-
-        with col_nav:
+        with c2:
             if current_view == "engage":
                 if st.button(
                     UIConfig.PLAYGROUND_BUTTON,
-                    use_container_width=True,
                     key="playground_button",
                 ) and on_playground_click:
                     on_playground_click()
             else:
                 if st.button(
                     UIConfig.ENGAGE_BUTTON,
-                    use_container_width=True,
                     key="engage_button",
                 ) and on_engage_click:
                     on_engage_click()
+        st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown("---")
 
@@ -125,27 +123,28 @@ class ActionButtonsComponent:
 
     @staticmethod
     def render(
-        on_reset: Callable[[], None], on_submit: Callable[[], None]
-    ) -> tuple[bool, bool]:
+        on_reset: Callable[[], None],
+        on_submit: Callable[[], None],
+        disabled: bool = False,
+    ) -> None:
         col1, col2, col3 = st.columns([2, 1, 1])
         with col2:
-            reset_clicked = st.button(
+            st.button(
                 UIConfig.RESET_BUTTON,
                 use_container_width=True,
                 key="reset_button",
+                disabled=disabled,
+                on_click=on_reset,
             )
         with col3:
-            submit_clicked = st.button(
+            st.button(
                 UIConfig.SUBMIT_BUTTON,
                 use_container_width=True,
                 type="primary",
                 key="submit_button",
+                disabled=disabled,
+                on_click=on_submit,
             )
-        if reset_clicked:
-            on_reset()
-        if submit_clicked:
-            on_submit()
-        return reset_clicked, submit_clicked
 
 
 class ResponseDisplayComponent:
@@ -154,13 +153,10 @@ class ResponseDisplayComponent:
     @staticmethod
     def render(
         responses: List[ModelResponse],
-        show_system_prompt: bool,
         show_user_prompt: bool,
-        on_toggle_system: Callable[[], None],
         on_toggle_user: Callable[[], None],
     ) -> None:
-        # Header row: label + two toggle buttons
-        label_col, btn_col1, btn_col2 = st.columns([2.5, 1, 1])
+        label_col, btn_col = st.columns([3, 1])
 
         with label_col:
             st.markdown(
@@ -168,27 +164,16 @@ class ResponseDisplayComponent:
                 unsafe_allow_html=True,
             )
 
-        with btn_col1:
+        with btn_col:
             if responses:
                 user_label = ("Hide Prompt" if show_user_prompt
                               else UIConfig.VIEW_PROMPT_BUTTON)
-                if st.button(
+                st.button(
                     user_label,
                     use_container_width=True,
                     key="toggle_view_prompt",
-                ):
-                    on_toggle_user()
-
-        with btn_col2:
-            if responses:
-                sys_label = ("Hide System" if show_system_prompt
-                             else UIConfig.VIEW_SYSTEM_PROMPT_BUTTON)
-                if st.button(
-                    sys_label,
-                    use_container_width=True,
-                    key="toggle_view_system",
-                ):
-                    on_toggle_system()
+                    on_click=on_toggle_user,
+                )
 
         if not responses:
             st.info(
@@ -196,7 +181,6 @@ class ResponseDisplayComponent:
             )
             return
 
-        # Responses list (reversed order)
         for idx, response in enumerate(reversed(responses)):
             response_num = len(responses) - idx
             with st.container():
@@ -205,12 +189,6 @@ class ResponseDisplayComponent:
                     f"**{response.model_name}**",
                     unsafe_allow_html=True,
                 )
-
-                if show_system_prompt and response.system_prompt:
-                    st.markdown(
-                        f'<div class="prompt-preview"><strong>System Prompt</strong><br/>{response.system_prompt}</div>',
-                        unsafe_allow_html=True,
-                    )
 
                 if show_user_prompt and response.user_prompt:
                     st.markdown(
@@ -250,10 +228,14 @@ class EngageModeComponent:
         on_password_guess_change: Callable[[str], None],
         on_check_password: Callable[[], None],
         on_toggle_user_prompt: Callable[[], None],
+        disabled: bool = False,
     ) -> None:
         """Render the full Engage game UI."""
         max_level = len(ENGAGE_LEVELS)
-        left_col, right_col = st.columns([1, 1], gap="large")
+        left_col, mid_col, right_col = st.columns([50, 1, 50])
+
+        with mid_col:
+            st.markdown('<div class="col-divider"></div>', unsafe_allow_html=True)
 
         # ---- LEFT COLUMN ----
         with left_col:
@@ -299,20 +281,22 @@ class EngageModeComponent:
             # Action buttons
             btn_spacer, btn_reset, btn_submit = st.columns([2, 1, 1])
             with btn_reset:
-                if st.button(
+                st.button(
                     UIConfig.RESET_BUTTON,
                     use_container_width=True,
                     key="engage_reset_button",
-                ):
-                    on_reset()
+                    disabled=disabled,
+                    on_click=on_reset,
+                )
             with btn_submit:
-                if st.button(
+                st.button(
                     UIConfig.SUBMIT_BUTTON,
                     use_container_width=True,
                     type="primary",
                     key="engage_submit_button",
-                ):
-                    on_submit()
+                    disabled=disabled,
+                    on_click=on_submit,
+                )
 
             st.markdown("")
 
@@ -355,12 +339,12 @@ class EngageModeComponent:
                 if responses:
                     user_label = ("Hide Prompt" if show_user_prompt
                                   else UIConfig.VIEW_PROMPT_BUTTON)
-                    if st.button(
+                    st.button(
                         user_label,
                         use_container_width=True,
                         key="engage_toggle_view_prompt",
-                    ):
-                        on_toggle_user_prompt()
+                        on_click=on_toggle_user_prompt,
+                    )
 
             if not responses:
                 st.info(

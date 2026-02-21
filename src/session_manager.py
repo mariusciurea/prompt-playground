@@ -58,6 +58,9 @@ class SessionStateManager:
         if "engage_show_user_prompt" not in st.session_state:
             st.session_state.engage_show_user_prompt = False
 
+        if "is_generating" not in st.session_state:
+            st.session_state.is_generating = False
+
     def get_system_prompt(self) -> str:
         """Get the current system prompt from session state."""
         return st.session_state.system_prompt
@@ -169,3 +172,9 @@ class SessionStateManager:
         """Get config for current engage level."""
         idx = st.session_state.engage_level - 1
         return ENGAGE_LEVELS[idx]
+
+    def get_is_generating(self) -> bool:
+        return st.session_state.is_generating
+
+    def set_is_generating(self, value: bool) -> None:
+        st.session_state.is_generating = value
