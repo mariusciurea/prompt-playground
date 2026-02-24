@@ -38,27 +38,20 @@ class HeaderComponent:
         )
         st.markdown(titles.get(current_view, default_title), unsafe_allow_html=True)
 
-        # Nav buttons
-        st.markdown('<div class="nav-bar">', unsafe_allow_html=True)
-        c1, c2, c3, c4 = st.columns([2, 2, 2, 6])
-        with c1:
-            if st.button(UIConfig.DOCUMENTATION_BUTTON, key="doc_button") and on_documentation_click:
-                on_documentation_click()
-        with c2:
-            if current_view == "engage":
-                if st.button(UIConfig.PLAYGROUND_BUTTON, key="playground_button") and on_playground_click:
-                    on_playground_click()
-            else:
-                if st.button(UIConfig.ENGAGE_BUTTON, key="engage_button") and on_engage_click:
-                    on_engage_click()
-        with c3:
-            if current_view == "reservation":
-                if st.button(UIConfig.PLAYGROUND_BUTTON, key="back_playground_button") and on_playground_click:
-                    on_playground_click()
-            else:
-                if st.button(UIConfig.RESERVATION_BUTTON, key="reservation_button") and on_reservation_click:
-                    on_reservation_click()
-        st.markdown('</div>', unsafe_allow_html=True)
+        nav_items = [
+            ("Playground", "playground"),
+            (UIConfig.ENGAGE_BUTTON, "engage"),
+            (UIConfig.RESERVATION_BUTTON, "reservation"),
+            (UIConfig.DOCUMENTATION_BUTTON, "documentation"),
+        ]
+        nav_links_html = "".join(
+            (
+                f'<a class="nav-link {"active" if current_view == view else ""}" '
+                f'href="?view={view}">{label}</a>'
+            )
+            for label, view in nav_items
+        )
+        st.markdown(f'<nav class="top-nav">{nav_links_html}</nav>', unsafe_allow_html=True)
 
         st.markdown("---")
 

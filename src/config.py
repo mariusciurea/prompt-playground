@@ -143,39 +143,35 @@ section[data-testid="stSidebar"] { background-color: #f1f5f9; }
     letter-spacing: 0;
 }
 
-/* ---------- header nav bar ---------- */
-.nav-bar {
+/* ---------- top navigation links ---------- */
+.top-nav {
     margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
-.nav-bar + div {
-    gap: 0.5rem !important;
-}
-.nav-bar + div .stButton > button {
+.top-nav .nav-link {
+    text-decoration: none;
     background: transparent;
     border: 1px solid #e2e8f0;
-    box-shadow: none;
     color: #64748b;
     font-size: 0.78rem;
     font-weight: 500;
     padding: 0.25rem 0.85rem;
     border-radius: 999px;
     letter-spacing: 0.01em;
-    white-space: nowrap;
-    min-height: 0;
     line-height: 1.4;
 }
-.nav-bar + div .stButton > button:hover {
+.top-nav .nav-link:hover {
     background: #f1f5f9;
     color: #6366f1;
     border-color: #c7d2fe;
-    box-shadow: none;
 }
-.nav-bar + div .stButton > button:active,
-.nav-bar + div .stButton > button:focus {
+.top-nav .nav-link.active {
     background: #e0e7ff;
     color: #4338ca;
     border-color: #a5b4fc;
-    box-shadow: none;
 }
 
 /* ---------- section labels ---------- */
@@ -326,6 +322,14 @@ div[data-testid="stHorizontalBlock"]:has(button[data-testid="stBaseButton-second
     min-height: 60vh;
     margin: 0 auto;
     width: 0;
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 768px) {
+    .col-divider {
+        display: none;
+        min-height: 0;
+    }
 }
 
 /* ---------- selectbox ---------- */
