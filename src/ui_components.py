@@ -39,17 +39,36 @@ class HeaderComponent:
         st.markdown(titles.get(current_view, default_title), unsafe_allow_html=True)
 
         nav_items = [
-            ("Playground", "playground"),
-            (UIConfig.ENGAGE_BUTTON, "engage"),
-            (UIConfig.RESERVATION_BUTTON, "reservation"),
-            (UIConfig.DOCUMENTATION_BUTTON, "documentation"),
+            {
+                "label": "Playground",
+                "href": "?view=playground",
+                "active": current_view == "playground",
+            },
+            {
+                "label": UIConfig.ENGAGE_BUTTON,
+                "href": "?view=engage",
+                "active": current_view == "engage",
+            },
+            {
+                "label": UIConfig.RESERVATION_BUTTON,
+                "href": "?view=reservation",
+                "active": current_view == "reservation",
+            },
+            {
+                "label": UIConfig.DOCUMENTATION_BUTTON,
+                "href": "https://www.promptingguide.ai/techniques",
+                "active": False,
+                "external": True,
+            },
         ]
         nav_links_html = "".join(
             (
-                f'<a class="nav-link {"active" if current_view == view else ""}" '
-                f'href="?view={view}">{label}</a>'
+                f'<a class="nav-link {"active" if item["active"] else ""}" '
+                f'href="{item["href"]}" '
+                f'{"target=\"_blank\" rel=\"noopener noreferrer\"" if item.get("external") else ""}>'
+                f'{item["label"]}</a>'
             )
-            for label, view in nav_items
+            for item in nav_items
         )
         st.markdown(f'<nav class="top-nav">{nav_links_html}</nav>', unsafe_allow_html=True)
 
