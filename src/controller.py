@@ -138,6 +138,11 @@ class PlaygroundController:
         self._session_manager.set_view_mode("reservation")
         st.rerun()
 
+    def _on_documentation_click(self) -> None:
+        """Switch to Documentation view."""
+        self._session_manager.set_view_mode("documentation")
+        st.rerun()
+
     # ---- Reservation agent helpers ----
 
     def _get_reservation_agent(self):
@@ -230,6 +235,12 @@ class PlaygroundController:
     def run(self) -> None:
         """Run the main application loop."""
         StyleComponent.inject_styles()
+        allowed_views = {"playground", "engage", "reservation", "documentation"}
+        query_view = st.query_params.get("view")
+        if isinstance(query_view, list):
+            query_view = query_view[0] if query_view else None
+        if query_view in allowed_views:
+            self._session_manager.set_view_mode(query_view)
 
         view_mode = self._session_manager.get_view_mode()
 
@@ -238,12 +249,15 @@ class PlaygroundController:
             on_engage_click=self._on_engage_click,
             on_playground_click=self._on_playground_click,
             on_reservation_click=self._on_reservation_click,
+            on_documentation_click=self._on_documentation_click,
         )
 
         if view_mode == "engage":
             self._run_engage_view()
         elif view_mode == "reservation":
             self._run_reservation_view()
+        elif view_mode == "documentation":
+            self._run_documentation_view()
         else:
             self._run_playground_view()
 
@@ -347,6 +361,19 @@ class PlaygroundController:
 
         if is_generating:
             self._process_playground_generation()
+
+    def _run_documentation_view(self) -> None:
+        """Render in-app documentation."""
+        st.markdown("### Documentation")
+        st.markdown(
+            "Use the navigation links above to switch between `Playground`, "
+            "`Engage`, and `Reservation`."
+        )
+        st.markdown(
+            "- `Playground`: test prompts with a system prompt and user prompt.\n"
+            "- `Engage`: practice prompt-injection scenarios by guessing passwords.\n"
+            "- `Reservation`: chat with the event reservation assistant."
+        )
 
 
 def create_controller() -> PlaygroundController:
