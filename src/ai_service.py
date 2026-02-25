@@ -10,7 +10,10 @@ from typing import Optional
 from src.models.models import PromptData, ModelResponse
 from src.config import GEMINI_MODEL_ID, GEMINI_MODEL_NAME
 from datetime import datetime
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def _extract_text_safely(response) -> str:
     """
@@ -106,6 +109,7 @@ class GeminiService(AIServiceInterface):
         Returns:
             ModelResponse: The generated response from Gemini
         """
+        logging.info("Generating response using GeminiService...")
         import google.generativeai as genai
 
         genai.configure(api_key=self._api_key)
@@ -116,10 +120,7 @@ class GeminiService(AIServiceInterface):
 
         model = genai.GenerativeModel(GEMINI_MODEL_ID, **model_kwargs)
         response = model.generate_content(prompt_data.user_prompt)
-        print(response)
-
         response_text = _extract_text_safely(response)
-        print(response_text)
         tokens_used = None
 
         if hasattr(response, "usage_metadata") and response.usage_metadata:
@@ -133,6 +134,7 @@ class GeminiService(AIServiceInterface):
         if tokens_used is None and response_text:
             tokens_used = len(response_text.split())
 
+        logging.info(f"Response generated with {tokens_used} tokens used.")
         return ModelResponse(
             model_name=self._model_name,
             response_text=response_text,
