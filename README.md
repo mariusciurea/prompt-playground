@@ -1,209 +1,76 @@
-# AI Playground - Streamlit Application
+# AI Playground
 
-A modular, well-structured Streamlit application for interacting with AI models, built following SOLID principles and Python best practices.
+A Streamlit app for learning prompt engineering with Google Gemini.
 
-## 🏗️ Architecture
+| Page | What it does |
+| --- | --- |
+| **Playground** | Write a system + user prompt, tune the temperature, watch the answer stream in, export the session. Ready-made examples included. |
+| **Engage** | Prompt-injection game: talk the model into revealing a password hidden in its system prompt. Progress is tracked per level. |
+| **Reservation** | Chat with a Google ADK agent that can list/book movies and read stored data. The tools it calls are shown under each answer. |
+| **Documentation** | Short in-app guide with a link to the Prompting Guide. |
 
-This application follows a clean, modular architecture based on SOLID principles:
+## Quick start
 
-### SOLID Principles Applied
-
-1. **Single Responsibility Principle (SRP)**
-   - Each class has one specific responsibility
-   - `SessionStateManager`: Manages session state only
-   - `HeaderComponent`, `ModelSelectorComponent`, etc.: Each UI component handles its own rendering
-   - `PlaygroundController`: Orchestrates application flow
-
-2. **Open/Closed Principle (OCP)**
-   - The system is open for extension but closed for modification
-   - New AI services can be added without modifying existing code
-   - New UI components can be added independently
-
-3. **Liskov Substitution Principle (LSP)**
-   - `AIServiceInterface` defines a contract that all AI services follow
-   - Any implementation can be substituted without breaking the application
-
-4. **Interface Segregation Principle (ISP)**
-   - Interfaces are focused and specific
-   - `AIServiceInterface` provides only essential methods
-
-5. **Dependency Inversion Principle (DIP)**
-   - High-level modules depend on abstractions, not concrete implementations
-   - Controller depends on `AIServiceInterface`, not specific implementations
-   - `AIServiceFactory` manages the creation of concrete instances
-
-## 📁 Project Structure
-
-```
-.
-├── app.py                  # Main entry point
-├── config.py              # Configuration and constants
-├── models.py              # Pydantic data models
-├── session_manager.py     # Session state management
-├── ai_service.py          # AI service interface and implementations
-├── ui_components.py       # Reusable UI components
-├── controller.py          # Application controller
-├── requirements.txt       # Python dependencies
-└── README.md             # This file
+```bash
+python -m venv .venv
+.venv\Scripts\activate            # Windows  (source .venv/bin/activate on macOS/Linux)
+pip install -r requirements.txt
+copy .env.example .env            # then set GEMINI_API_KEY
+streamlit run app.py
 ```
 
-## 🚀 Features
+Or run `run.bat` / `run.sh`. With Docker:
 
-- **Model Selection**: Choose from multiple AI models (Gemini, Claude, GPT-4)
-- **Dual Prompt System**: Separate system and user prompts
-- **Response Display**: View AI-generated responses with metadata
-- **Toggle Views**: Show/hide prompts in response section
-- **Clean UI**: Modern, intuitive interface with custom styling
-- **Session Management**: Persistent state across interactions
-- **Reset Functionality**: Clear all inputs and responses
-
-## 📦 Installation
-
-### Prerequisites
-
-- Python 3.8 or higher
-- pip package manager
-
-### Setup Steps
-
-1. **Clone or download the project files**
-
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Run the application**:
-   ```bash
-   streamlit run app.py
-   ```
-
-4. **Access the application**:
-   - The application will automatically open in your default browser
-   - Default URL: `http://localhost:8501`
-
-## 🎯 Usage
-
-### Basic Workflow
-
-1. **Select a Model**: Choose your preferred AI model from the dropdown
-2. **Enter System Prompt** (optional): Provide system-level instructions
-3. **Enter User Prompt**: Type your query or prompt
-4. **Submit**: Click the Submit button to generate a response
-5. **View Response**: See the generated response in the right panel
-6. **Toggle Views**: Use "View Prompt" and "View System Prompt" buttons to show/hide prompts
-7. **Reset**: Click Reset to clear all inputs and start fresh
-
-### Example Use Cases
-
-- **Content Generation**: Generate articles, stories, or creative content
-- **Code Assistance**: Get help with coding problems
-- **Question Answering**: Ask questions and get detailed answers
-- **Experimentation**: Test different prompts and system instructions
-
-## 🔧 Configuration
-
-### Customizing Models
-
-Edit `config.py` to add or modify available models:
-
-```python
-class AIModel(Enum):
-    YOUR_MODEL = "Your Model Name"
+```bash
+docker build -t ai-playground .
+docker run -p 8501:8501 --env-file .env ai-playground
 ```
 
-### Customizing UI
+## Configuration
 
-Modify `config.py` to change:
-- Colors and styling (`StyleConfig`)
-- Button labels and text (`UIConfig`)
-- Default settings (`AppConfig`)
+Settings are validated by [pydantic-settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/)
+in [src/config.py](src/config.py). They are read from environment variables or `.env`
+(see [.env.example](.env.example)):
 
-### Adding Real AI Integrations
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `GEMINI_API_KEY` | – (required) | Google AI Studio key |
+| `GEMINI_MODEL_ID` | `gemini-3-flash-preview` | Model for Playground / Engage |
+| `GEMINI_MODEL_NAME` | `Gemini 3` | Name shown in the UI |
+| `AGENT_MODEL_ID` | `gemini-3.5-flash` | Model for the Reservation agent |
+| `MAX_PROMPT_LENGTH` | `10000` | Max characters per prompt field |
+| `DEFAULT_TEMPERATURE` | `1.0` | Initial temperature slider value |
+| `LOG_LEVEL` | `INFO` | Python logging level |
 
-To integrate with real AI APIs:
+## Project layout
 
-1. Create a new class in `ai_service.py` that implements `AIServiceInterface`
-2. Add API credentials handling
-3. Implement the `generate_response()` method
-4. Update `AIServiceFactory` to route to your implementation
-
-Example:
-```python
-class OpenAIService(AIServiceInterface):
-    def __init__(self, model_name: str):
-        self._model_name = model_name
-        # Initialize OpenAI client
-    
-    def generate_response(self, prompt_data: PromptData) -> ModelResponse:
-        # Call OpenAI API
-        pass
+```
+app.py                    Entry point: page config, styles, st.navigation
+src/
+  config.py               Settings (pydantic-settings)
+  models.py               PromptData, ModelResponse
+  engage.py               Engage levels and password check
+  state.py                Typed session state + cached service accessors
+  services/ai_service.py  AIService interface, GeminiService (google-genai, streaming)
+  agent/                  ADK agent: agent.py (runner wrapper), tools.py, prompt.py
+  ui/                     components.py (shared widgets), style.css
+  views/                  One module per page: playground, engage, reservation, documentation
+tests/                    pytest suite (no network needed)
 ```
 
-## 🧪 Testing
+Views own their UI and call services; services never import Streamlit, so they can
+be tested and reused on their own.
 
-The application uses a mock AI service (`MockAIService`) for demonstration purposes. This allows you to:
-- Test the UI without API keys
-- Develop and debug without API costs
-- Understand the expected behavior
+## Development
 
-## 📝 Code Style
+```bash
+pip install -r requirements-dev.txt
+pytest
+ruff check . && ruff format .
+```
 
-The codebase follows Python best practices:
+## Note on the Reservation agent
 
-- **Naming Conventions**:
-  - Classes: `PascalCase`
-  - Functions/Methods: `snake_case`
-  - Constants: `UPPER_SNAKE_CASE`
-  - Private methods: `_leading_underscore`
-
-- **Documentation**:
-  - Comprehensive docstrings for all modules, classes, and methods
-  - Type hints throughout the codebase
-  - Clear inline comments where needed
-
-- **Organization**:
-  - Logical separation of concerns
-  - Modular design for easy maintenance
-  - Minimal coupling between components
-
-## 🔐 Security Considerations
-
-When deploying to production:
-
-1. **API Keys**: Store API keys in environment variables, not in code
-2. **Input Validation**: Validate all user inputs (already implemented with Pydantic)
-3. **Rate Limiting**: Implement rate limiting for API calls
-4. **Error Handling**: Add comprehensive error handling for production use
-
-## 🚧 Future Enhancements
-
-Potential improvements:
-- Add user authentication
-- Implement conversation history
-- Add file upload support
-- Include image generation capabilities
-- Add export functionality for responses
-- Implement streaming responses
-- Add model comparison feature
-- Include token usage tracking and limits
-
-## 📄 License
-
-This project is provided as-is for educational and demonstration purposes.
-
-## 🤝 Contributing
-
-To contribute:
-1. Follow the existing code structure
-2. Maintain SOLID principles
-3. Add docstrings for new code
-4. Test thoroughly before submitting
-
-## 📧 Support
-
-For issues or questions, please refer to the Streamlit documentation: https://docs.streamlit.io
-
----
-
-**Built with ❤️ using Streamlit and Python**
+`read_from_disc` is deliberately over-permissive and serves a **fake** secret for
+`.env` files: the agent is a sandbox for practising prompt injection and
+excessive-agency attacks. Never connect it to real files or credentials.
