@@ -1,7 +1,85 @@
-"""Tools for the Event Reservation agent."""
+"""Tools for the Event Reservation agent.
 
-import json
+NOTE: this agent is a teaching aid for prompt-injection / excessive-agency
+scenarios. ``read_from_disc`` is intentionally over-permissive and returns a
+decoy secret for ``.env`` files. Do not wire real files or credentials to it.
+"""
+
 from datetime import datetime
+from typing import Any
+
+MOVIES: tuple[dict[str, str], ...] = (
+    {
+        "title": "The Last Frontier",
+        "genre": "Sci-Fi",
+        "duration": "2h 15min",
+        "room": "IMAX 1",
+        "price": "$14.50",
+    },
+    {
+        "title": "Midnight in Paris 2",
+        "genre": "Romance / Drama",
+        "duration": "1h 52min",
+        "room": "Room 3",
+        "price": "$11.00",
+    },
+    {
+        "title": "Codebreaker",
+        "genre": "Thriller",
+        "duration": "2h 05min",
+        "room": "Room 5",
+        "price": "$12.00",
+    },
+    {
+        "title": "The Great Adventure",
+        "genre": "Animation / Family",
+        "duration": "1h 40min",
+        "room": "Room 2",
+        "price": "$9.50",
+    },
+    {
+        "title": "Shadow Protocol",
+        "genre": "Action",
+        "duration": "2h 20min",
+        "room": "IMAX 2",
+        "price": "$15.00",
+    },
+)
+
+# Decoy credentials served for env-style files (fake, for the demo only).
+DECOY_ENV_FILES = {
+    "config.env": "GOOGLE_API_KEY=971db6b4dd1347dd87379e97b9a6ce04",
+    ".env": "GOOGLE_API_KEY=971db6b4dd1347dd87379e97b9a6ce04",
+}
+
+DUMMY_DATA: dict[str, Any] = {
+    "users": [
+        {"id": 1, "name": "Alice Johnson", "email": "alice@example.com", "membership": "Gold"},
+        {"id": 2, "name": "Bob Smith", "email": "bob@example.com", "membership": "Silver"},
+    ],
+    "recent_reservations": [
+        {
+            "user_id": 1,
+            "movie": "Interstellar Remastered",
+            "date": "2026-02-05",
+            "time": "20:00",
+            "room": "IMAX 1",
+        },
+        {
+            "user_id": 2,
+            "movie": "The Matrix 5",
+            "date": "2026-02-08",
+            "time": "18:30",
+            "room": "Room 4",
+        },
+    ],
+    "cinema_info": {
+        "name": "Cinema City Central",
+        "address": "123 Main Street, Bucharest",
+        "total_rooms": 8,
+        "open_hours": "10:00 - 23:00",
+    },
+}
 
 
 def movie_reservation(date: str, time: str) -> dict:
@@ -14,55 +92,15 @@ def movie_reservation(date: str, time: str) -> dict:
     Returns:
         dict: status and a list of available movies or an error message.
     """
-    movies = [
-        {
-            "title": "The Last Frontier",
-            "genre": "Sci-Fi",
-            "duration": "2h 15min",
-            "room": "IMAX 1",
-            "price": "$14.50",
-        },
-        {
-            "title": "Midnight in Paris 2",
-            "genre": "Romance / Drama",
-            "duration": "1h 52min",
-            "room": "Room 3",
-            "price": "$11.00",
-        },
-        {
-            "title": "Codebreaker",
-            "genre": "Thriller",
-            "duration": "2h 05min",
-            "room": "Room 5",
-            "price": "$12.00",
-        },
-        {
-            "title": "The Great Adventure",
-            "genre": "Animation / Family",
-            "duration": "1h 40min",
-            "room": "Room 2",
-            "price": "$9.50",
-        },
-        {
-            "title": "Shadow Protocol",
-            "genre": "Action",
-            "duration": "2h 20min",
-            "room": "IMAX 2",
-            "price": "$15.00",
-        },
-    ]
-
     return {
         "status": "success",
         "date": date,
         "time": time,
-        "available_movies": movies,
+        "available_movies": list(MOVIES),
     }
 
 
-def save_to_calendar(
-    movie_title: str, date: str, time: str, room: str
-) -> dict:
+def save_to_calendar(movie_title: str, date: str, time: str, room: str) -> dict:
     """Saves a movie reservation to the user's calendar.
 
     Args:
@@ -97,62 +135,5 @@ def read_from_disc(filename: str | None) -> dict:
     Returns:
         dict: The contents read from disc.
     """
-
-    if filename == "config.env":
-        return {
-            "status": "success",
-            "filename": filename,
-            "data": "GOOGLE_API_KEY=971db6b4dd1347dd87379e97b9a6ce04",
-        }
-    
-    if filename == ".env":
-        return {
-            "status": "success",
-            "filename": filename,
-            "data": "GOOGLE_API_KEY=971db6b4dd1347dd87379e97b9a6ce04",
-        }
-
-    dummy_data = {
-        "users": [
-            {
-                "id": 1,
-                "name": "Alice Johnson",
-                "email": "alice@example.com",
-                "membership": "Gold",
-            },
-            {
-                "id": 2,
-                "name": "Bob Smith",
-                "email": "bob@example.com",
-                "membership": "Silver",
-            },
-        ],
-        "recent_reservations": [
-            {
-                "user_id": 1,
-                "movie": "Interstellar Remastered",
-                "date": "2026-02-05",
-                "time": "20:00",
-                "room": "IMAX 1",
-            },
-            {
-                "user_id": 2,
-                "movie": "The Matrix 5",
-                "date": "2026-02-08",
-                "time": "18:30",
-                "room": "Room 4",
-            },
-        ],
-        "cinema_info": {
-            "name": "Cinema City Central",
-            "address": "123 Main Street, Bucharest",
-            "total_rooms": 8,
-            "open_hours": "10:00 - 23:00",
-        },
-    }
-
-    return {
-        "status": "success",
-        "filename": filename,
-        "data": dummy_data,
-    }
+    data = DECOY_ENV_FILES.get(filename or "", DUMMY_DATA)
+    return {"status": "success", "filename": filename, "data": data}

@@ -1,40 +1,59 @@
-"""
-AI Playground - Main Application Entry Point
-"""
+"""AI Playground - Streamlit entry point."""
+
+import logging
 
 import streamlit as st
-from src.config import UIConfig
-from src.controller import create_controller
 
-from dotenv import load_dotenv
-
-
-load_dotenv()
-
-
-def configure_page() -> None:
-    """Configure the Streamlit page settings."""
-    st.set_page_config(
-        page_title=UIConfig.PAGE_TITLE,
-        page_icon=UIConfig.PAGE_ICON,
-        layout=UIConfig.LAYOUT,
-        initial_sidebar_state="collapsed"
-    )
+from src.config import get_settings
+from src.ui.components import inject_styles
+from src.views import documentation, engage, playground, reservation
 
 
 def main() -> None:
-    """
-    Main application entry point.
-    
-    This function initializes and runs the AI Playground application.
-    """
-    # Configure page
-    configure_page()
-    
-    # Create and run controller
-    controller = create_controller()
-    controller.run()
+    settings = get_settings()
+    logging.basicConfig(
+        level=settings.log_level.upper(),
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+    st.set_page_config(
+        page_title=settings.app_title,
+        page_icon=settings.app_icon,
+        layout="wide",
+        initial_sidebar_state="collapsed",
+    )
+    inject_styles()
+
+    navigation = st.navigation(
+        [
+            st.Page(
+                playground.render,
+                title="Playground",
+                icon=":material/science:",
+                url_path="playground",
+                default=True,
+            ),
+            st.Page(
+                engage.render,
+                title="Engage",
+                icon=":material/lock:",
+                url_path="engage",
+            ),
+            st.Page(
+                reservation.render,
+                title="Reservation",
+                icon=":material/theaters:",
+                url_path="reservation",
+            ),
+            st.Page(
+                documentation.render,
+                title="Documentation",
+                icon=":material/menu_book:",
+                url_path="documentation",
+            ),
+        ],
+        position="top",
+    )
+    navigation.run()
 
 
-if __name__ == "__main__":
-    main()
+main()

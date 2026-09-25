@@ -1,0 +1,53 @@
+/* Theme-neutral touches on top of Streamlit's native components.
+   Colors use rgba() so they read well in both light and dark mode. */
+
+.block-container { padding-top: 2.5rem; max-width: 1200px; }
+
+.app-title {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    margin: 0 0 0.15rem;
+}
+.app-title .accent {
+    background: linear-gradient(90deg, #6366f1, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.app-subtitle { opacity: 0.65; font-size: 0.95rem; margin: 0 0 1rem; }
+
+.model-badge {
+    display: inline-block;
+    background: rgba(99, 102, 241, 0.14);
+    color: #6366f1;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    -webkit-text-fill-color: initial;
+}
+
+/* Rounded, softly elevated message bubbles */
+[data-testid="stChatMessage"] {
+    border-radius: 14px;
+    border: 1px solid rgba(128, 128, 128, 0.18);
+    transition: box-shadow 0.2s ease;
+}
+[data-testid="stChatMessage"]:hover { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08); }
+
+/* Inputs */
+.stTextArea textarea, .stTextInput input { border-radius: 10px; }
+
+/* Buttons */
+.stButton > button, .stFormSubmitButton > button, .stDownloadButton > button {
+    border-radius: 10px;
+    font-weight: 600;
+    transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+.stButton > button:hover, .stFormSubmitButton > button:hover { transform: translateY(-1px); }
+
+.meta-caption { font-size: 0.75rem; opacity: 0.6; margin-top: 0.4rem; }

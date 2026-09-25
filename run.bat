@@ -12,7 +12,7 @@ REM Check if Python is installed
 python --version >nul 2>&1
 if errorlevel 1 (
     echo Error: Python is not installed
-    echo Please install Python 3.8 or higher from python.org
+    echo Please install Python 3.12 or higher from python.org
     pause
     exit /b 1
 )
