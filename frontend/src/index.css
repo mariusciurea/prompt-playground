@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 15 18 24;
+  --surface: 23 27 36;
+  --border: 42 48 60;
+  --fg: 232 236 243;
+  --muted: 148 158 176;
+  --accent: 110 168 254;
+  --danger: 248 113 113;
+  --warn: 251 191 36;
+  --ok: 74 222 128;
+}
+
+:root[data-theme="light"] {
+  --bg: 247 248 250;
+  --surface: 255 255 255;
+  --border: 221 226 233;
+  --fg: 24 28 36;
+  --muted: 90 100 116;
+  --accent: 37 99 235;
+  --danger: 220 38 38;
+  --warn: 180 120 10;
+  --ok: 22 163 74;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: rgb(var(--bg));
+  color: rgb(var(--fg));
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium
+      transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-accent text-white hover:brightness-110;
+  }
+  .btn-ghost {
+    @apply btn border border-border bg-transparent text-fg hover:bg-surface;
+  }
+  .card {
+    @apply rounded-xl border border-border bg-surface p-4;
+  }
+  .input {
+    @apply w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-fg outline-none
+      focus:border-accent;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium text-muted;
+  }
+}

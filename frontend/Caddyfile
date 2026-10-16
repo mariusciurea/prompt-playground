@@ -1,0 +1,34 @@
+# Frontend service: serve the built SPA and reverse-proxy the API to the backend.
+# On Railway, {$PORT} is injected and BACKEND_URL points at the private backend service.
+{
+	admin off
+	auto_https off
+}
+
+:{$PORT:8080} {
+	encode gzip zstd
+
+	# Hand the real client IP to the backend (set from Cloudflare's trusted header).
+	request_header X-Client-IP {http.request.header.CF-Connecting-IP}
+
+	handle /api/* {
+		reverse_proxy {$BACKEND_URL:http://127.0.0.1:8000}
+	}
+
+	handle {
+		root * /srv
+		# Hashed assets are immutable; the HTML shell must not be cached.
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		header /index.html Cache-Control "no-store"
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		-Server
+	}
+}

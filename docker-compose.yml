@@ -1,0 +1,64 @@
+# Local development stack: Postgres + Redis + backend + frontend behind Caddy.
+# Production uses Railway services (see DEPLOYMENT.md); this file is for running the
+# whole app on one machine with a single `docker compose up`.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: ai_playground
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://app:app@db:5432/ai_playground
+      REDIS_URL: redis://redis:6379/0
+      PUBLIC_BASE_URL: http://localhost:8080
+      CLIENT_IP_HEADER: X-Client-IP
+      COOKIE_SECURE: "false"
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY in a .env file}
+      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY:?set TOTP_ENCRYPTION_KEY in a .env file}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    # Apply migrations, then start the API.
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.services:create_app --factory --host 0.0.0.0 --port 8000
+             --proxy-headers --forwarded-allow-ips '*'"
+
+  frontend:
+    build: ./frontend
+    environment:
+      PORT: "8080"
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

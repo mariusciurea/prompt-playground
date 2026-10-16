@@ -1,0 +1,88 @@
+[project]
+name = "ai-playground-backend"
+version = "0.1.0"
+description = "FastAPI backend for the AI Playground course platform."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.141",
+    "uvicorn[standard]>=0.54",
+    "sqlalchemy[asyncio]>=2.1",
+    "asyncpg>=0.32",
+    "alembic>=1.20",
+    "pydantic>=2.14",
+    "pydantic-settings>=2.16",
+    "pyjwt>=2.15",
+    "pwdlib[argon2]>=0.3",
+    "email-validator>=2.3",
+    "python-multipart>=0.0.32",
+    "redis>=8.1",
+    "httpx>=0.28",
+    "openpyxl>=3.1",
+    "pyotp>=2.10",
+    "cryptography>=50.0",
+    "google-genai>=2.31",
+    "google-adk>=2.12",
+    "disposable-email-domains>=0.0.281",
+    "tzdata>=2026.5",
+    "defusedxml>=0.7.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1",
+    "pytest-asyncio>=1.4",
+    "ruff>=0.17",
+    "mypy>=2.4",
+    "pgserver>=0.1.4",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "SIM", "RUF", "D", "ASYNC", "PT"]
+ignore = [
+    "D100", # module docstrings are welcome but not mandatory everywhere
+    "D102", # methods implementing a protocol inherit its docstring
+    "D104",
+    "D105",
+    "D107",
+    "D203",
+    "D213",
+    "RUF012",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "D"]
+"migrations/**" = ["D"]
+"app/content/**" = ["E501"]
+"app/agents/**/prompt.py" = ["E501"]
+"app/agents/reservation/*" = ["D401", "RUF001"]  # ported teaching content, kept verbatim
+"app/agents/**" = ["D417"]  # tool_context is an injected ADK argument, not documented
+"app/content/engage_levels.py" = ["S105", "S106"]  # game passwords, not real secrets
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ["migrations/", "tests/"]
+
+[[tool.mypy.overrides]]
+module = ["pyotp.*", "openpyxl.*", "pgserver.*", "disposable_email_domains.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["google.adk.*"]
+implicit_reexport = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+filterwarnings = ["ignore::DeprecationWarning"]
