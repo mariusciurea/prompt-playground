@@ -46,7 +46,9 @@ class RedisStore:
     """Store backed by Redis."""
 
     def __init__(self, url: str) -> None:
-        self._redis: Redis = Redis.from_url(url, decode_responses=True)
+        self._redis: Redis = Redis.from_url(
+            url, decode_responses=True, socket_connect_timeout=5, socket_timeout=5
+        )
 
     async def incr(self, key: str, ttl_seconds: int) -> int:
         async with self._redis.pipeline(transaction=True) as pipe:
