@@ -13,13 +13,12 @@ WORKDIR /code
 
 # Install dependencies first (cached) using only the lock + manifest.
 COPY pyproject.toml uv.lock ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev
+RUN uv sync --frozen --no-install-project --no-dev
 
 COPY app ./app
 COPY alembic.ini ./
 COPY migrations ./migrations
-RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev
 
 ENV PATH="/code/.venv/bin:$PATH"
 EXPOSE 8000
