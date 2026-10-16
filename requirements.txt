@@ -1,5 +1,0 @@
-streamlit==1.53.1
-pydantic==2.12.5
-pydantic-settings==2.13.1
-google-genai==1.64.0
-google-adk==1.25.1
