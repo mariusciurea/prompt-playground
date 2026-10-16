@@ -17,6 +17,15 @@ class Environment(StrEnum):
     PRODUCTION = "production"
 
 
+class EmailBackend(StrEnum):
+    """How outgoing e-mail is delivered."""
+
+    AUTO = "auto"  # pick based on what is configured (resend → smtp → console)
+    CONSOLE = "console"  # log messages instead of sending (development)
+    RESEND = "resend"  # Resend HTTP API (needs a verified domain)
+    SMTP = "smtp"  # any SMTP server, e.g. Gmail with an app password (no domain needed)
+
+
 class Settings(BaseSettings):
     """Typed application configuration.
 
@@ -60,8 +69,15 @@ class Settings(BaseSettings):
     turnstile_secret_key: SecretStr | None = Field(
         default=None, description="Cloudflare Turnstile secret. Verification is skipped if unset."
     )
-    resend_api_key: SecretStr | None = Field(
-        default=None, description="Resend API key. E-mails are logged to the console if unset."
+    email_backend: EmailBackend = Field(
+        default=EmailBackend.AUTO, description="Which e-mail transport to use."
+    )
+    resend_api_key: SecretStr | None = Field(default=None, description="Resend API key.")
+    smtp_host: str | None = Field(default=None, description="SMTP host, e.g. smtp.gmail.com.")
+    smtp_port: int = Field(default=587, gt=0, le=65535, description="SMTP port (587 = STARTTLS).")
+    smtp_username: str | None = Field(default=None, description="SMTP login (e.g. your Gmail).")
+    smtp_password: SecretStr | None = Field(
+        default=None, description="SMTP password (a Gmail app password, not the account password)."
     )
     email_from: str = Field(default="AI Playground <noreply@example.com>")
 
@@ -92,6 +108,17 @@ class Settings(BaseSettings):
         """Time zone in which the daily quota resets."""
         return ZoneInfo(self.quota_timezone)
 
+    @property
+    def resolved_email_backend(self) -> EmailBackend:
+        """The transport AUTO resolves to, given what is configured."""
+        if self.email_backend is not EmailBackend.AUTO:
+            return self.email_backend
+        if self.resend_api_key is not None:
+            return EmailBackend.RESEND
+        if self.smtp_host is not None:
+            return EmailBackend.SMTP
+        return EmailBackend.CONSOLE
+
     @field_validator("quota_timezone")
     @classmethod
     def _check_timezone(cls, value: str) -> str:
@@ -107,12 +134,20 @@ class Settings(BaseSettings):
             for name, value in (
                 ("REDIS_URL", self.redis_url),
                 ("TURNSTILE_SECRET_KEY", self.turnstile_secret_key),
-                ("RESEND_API_KEY", self.resend_api_key),
             )
             if value is None
         ]
         if missing:
             raise ValueError(f"Missing required production settings: {', '.join(missing)}")
+        if self.resolved_email_backend is EmailBackend.CONSOLE:
+            raise ValueError(
+                "No e-mail transport configured for production: set RESEND_API_KEY, or "
+                "SMTP_HOST/SMTP_USERNAME/SMTP_PASSWORD."
+            )
+        if self.resolved_email_backend is EmailBackend.SMTP and (
+            self.smtp_host is None or self.smtp_username is None or self.smtp_password is None
+        ):
+            raise ValueError("SMTP requires SMTP_HOST, SMTP_USERNAME and SMTP_PASSWORD.")
         if not self.cookie_secure:
             raise ValueError("COOKIE_SECURE must be true in production")
         return self

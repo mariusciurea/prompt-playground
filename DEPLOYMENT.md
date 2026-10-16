@@ -25,7 +25,10 @@ Railway: frontend (Caddy, $PORT)  ──private──▶  backend (uvicorn, :800
    - `PUBLIC_BASE_URL=https://app.yourdomain.com`
    - `CLIENT_IP_HEADER=X-Client-IP`
    - `JWT_SECRET_KEY`, `TOTP_ENCRYPTION_KEY` (generate: see `backend/.env.example`)
-   - `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`
+   - `TURNSTILE_SECRET_KEY`
+   - E-mail: either `RESEND_API_KEY` (needs a verified domain) **or**, without a domain,
+     `EMAIL_BACKEND=smtp` with `SMTP_HOST`/`SMTP_PORT`/`SMTP_USERNAME`/`SMTP_PASSWORD`
+     (e.g. Gmail + app password). Plus `EMAIL_FROM` matching the transport.
    - `GEMINI_API_KEY`, and model ids if not the defaults
    - `LOG_JSON=true`
    - **Pre-deploy command:** `alembic upgrade head`

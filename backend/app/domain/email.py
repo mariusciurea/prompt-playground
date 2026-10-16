@@ -1,4 +1,4 @@
-"""Transactional e-mail: message templates and delivery via Resend or the console."""
+"""Transactional e-mail: message templates and delivery via Resend, SMTP, or the console."""
 
 import asyncio
 import html
@@ -83,11 +83,53 @@ class ResendEmailSender:
         response.raise_for_status()
 
 
+class SmtpEmailSender:
+    """Sender for any SMTP server (e.g. Gmail with an app password); needs no domain."""
+
+    throttle_seconds = 1.0  # Gmail is unhappy with bursts
+
+    def __init__(self, settings: Settings) -> None:
+        self._host = settings.smtp_host or ""
+        self._port = settings.smtp_port
+        self._username = settings.smtp_username or ""
+        self._password = settings.smtp_password.get_secret_value() if settings.smtp_password else ""
+        self._sender = settings.email_from
+
+    async def send(self, message: EmailMessage) -> None:
+        from email.message import EmailMessage as MimeMessage
+
+        import aiosmtplib
+
+        mime = MimeMessage()
+        mime["From"] = self._sender
+        mime["To"] = message.to
+        mime["Subject"] = message.subject
+        mime.set_content(message.as_text())
+        mime.add_alternative(message.as_html(), subtype="html")
+        await aiosmtplib.send(
+            mime,
+            hostname=self._host,
+            port=self._port,
+            username=self._username,
+            password=self._password,
+            start_tls=self._port == 587,
+            use_tls=self._port == 465,
+            timeout=15,
+        )
+
+
 def create_email_sender(settings: Settings, http: httpx.AsyncClient) -> EmailSender:
-    """Build the configured sender."""
-    if settings.resend_api_key is None:
-        return ConsoleEmailSender()
-    return ResendEmailSender(http, settings.resend_api_key.get_secret_value(), settings.email_from)
+    """Build the configured sender (AUTO resolves to Resend, then SMTP, then console)."""
+    from app.core.settings import EmailBackend
+
+    backend = settings.resolved_email_backend
+    if backend is EmailBackend.RESEND and settings.resend_api_key is not None:
+        return ResendEmailSender(
+            http, settings.resend_api_key.get_secret_value(), settings.email_from
+        )
+    if backend is EmailBackend.SMTP:
+        return SmtpEmailSender(settings)
+    return ConsoleEmailSender()
 
 
 async def deliver(sender: EmailSender, message: EmailMessage) -> None:

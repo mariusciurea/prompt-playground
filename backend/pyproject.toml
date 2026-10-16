@@ -25,6 +25,7 @@ dependencies = [
     "disposable-email-domains>=0.0.281",
     "tzdata>=2026.5",
     "defusedxml>=0.7.1",
+    "aiosmtplib>=3.0",
 ]
 
 [dependency-groups]
