@@ -30,6 +30,8 @@ async def list_history(
 
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)
-async def clear_history(user: AccessUser, session: SessionDep) -> None:
-    """Delete all of the user's history."""
-    await activity.clear_history(session, user.id)
+async def clear_history(
+    user: AccessUser, session: SessionDep, feature: Feature | None = None
+) -> None:
+    """Delete the user's history, optionally only for one feature."""
+    await activity.clear_history(session, user.id, feature=feature)
