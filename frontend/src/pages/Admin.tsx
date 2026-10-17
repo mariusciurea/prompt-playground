@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Navigate, Route, Routes } from "react-router-dom";
+import { Link, NavLink, Navigate, Route, Routes } from "react-router-dom";
 
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
@@ -17,6 +17,21 @@ const TABS = [
 export function AdminPage() {
   const { me } = useAuth();
   const isAdmin = me?.user.role === "admin";
+  if (me && !me.user.totp_enabled) {
+    return (
+      <div className="mx-auto max-w-xl">
+        <h1 className="mb-4 text-2xl font-semibold">Admin</h1>
+        <div className="card">
+          <p className="mb-3 text-sm text-muted">
+            Staff tools require two-factor authentication. Turn it on first, then come back here.
+          </p>
+          <Link to="/security" className="btn-primary">
+            Set up two-factor
+          </Link>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="mx-auto max-w-5xl">
       <h1 className="mb-4 text-2xl font-semibold">Admin</h1>

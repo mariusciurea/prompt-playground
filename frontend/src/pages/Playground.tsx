@@ -171,7 +171,7 @@ export function Playground() {
                   onClick={() => void clearHistory()}
                   disabled={clearing || running}
                 >
-                  {clearing ? "Clearing…" : "Clear"}
+                  {clearing ? "Clearingâ€¦" : "Clear"}
                 </button>
               </span>
             )}
