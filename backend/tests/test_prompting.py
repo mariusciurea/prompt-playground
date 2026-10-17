@@ -220,6 +220,12 @@ async def test_history_and_demos_and_learn(client, login, grant_access, state):
     history = (await client.get("/api/history")).json()
     assert history["total"] == 1
     assert history["items"][0]["feature"] == "playground"
+    # Clearing another feature's history leaves the playground entry alone.
+    assert (await client.request("DELETE", "/api/history?feature=engage")).status_code == 204
+    assert (await client.get("/api/history")).json()["total"] == 1
+    assert (await client.request("DELETE", "/api/history?feature=playground")).status_code == 204
+    assert (await client.get("/api/history")).json()["total"] == 0
+    await _run_sse(client, "/api/playground/run", {"user_prompt": "again"})
     assert (await client.request("DELETE", "/api/history")).status_code == 204
     assert (await client.get("/api/history")).json()["total"] == 0
 

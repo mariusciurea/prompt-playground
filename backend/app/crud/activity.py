@@ -52,9 +52,14 @@ async def list_history(
     return list(rows), total or 0
 
 
-async def clear_history(session: AsyncSession, user_id: uuid.UUID) -> None:
-    """Delete all of a user's history."""
-    await session.execute(delete(PromptHistory).where(PromptHistory.user_id == user_id))
+async def clear_history(
+    session: AsyncSession, user_id: uuid.UUID, *, feature: Feature | None = None
+) -> None:
+    """Delete a user's history, optionally only for one feature."""
+    conditions = [PromptHistory.user_id == user_id]
+    if feature is not None:
+        conditions.append(PromptHistory.feature == feature)
+    await session.execute(delete(PromptHistory).where(*conditions))
     await session.commit()
 
 
