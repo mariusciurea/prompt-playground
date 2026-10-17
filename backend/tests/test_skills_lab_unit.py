@@ -67,3 +67,33 @@ def test_debrief_for_a_benign_skill():
     )
     assert not result.attacked
     assert not result.exfiltrated
+
+
+def test_debrief_when_no_skill_was_loaded():
+    result = build_debrief(
+        malicious=False,
+        technique=HideTechnique.NONE,
+        attacker_log=[],
+        outbox=[],
+        blocked=[],
+        skill_loaded=False,
+    )
+    assert not result.attacked
+    assert "load_skill" in result.steps[0]
+
+
+def test_instruction_lists_installed_skills():
+    from types import SimpleNamespace
+
+    from app.agents.skills_lab.agent import build_instruction
+
+    ctx = SimpleNamespace(
+        state={
+            "available_skills": {
+                "text-summarizer": {"description": "Summarize.", "body": "SECRET-BODY"}
+            }
+        }
+    )
+    text = build_instruction(ctx)  # type: ignore[arg-type]
+    assert "- text-summarizer: Summarize." in text
+    assert "SECRET-BODY" not in text.split("Installed skills:")[1]

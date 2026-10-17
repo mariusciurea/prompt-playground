@@ -37,7 +37,10 @@ Railway: frontend (Caddy, $PORT)  ──private──▶  backend (uvicorn, :800
    - `VITE_TURNSTILE_SITE_KEY` must be set **at build time** (Railway build arg / variable).
    - Attach the public domain here.
 4. **retention (cron)** — same image/repo as backend, schedule `0 3 * * *`, command
-   `python -m app.tasks.retention`, with the same `DATABASE_URL`.
+   `python -m app.tasks.retention`. It loads the full `Settings`, so it needs every required
+   variable of the backend, not just `DATABASE_URL`: at minimum `JWT_SECRET_KEY` and
+   `TOTP_ENCRYPTION_KEY` (use Railway variable references, e.g. `${{backend.JWT_SECRET_KEY}}`,
+   so the values never drift), plus `ENVIRONMENT=production`.
 
 ## Cloudflare
 

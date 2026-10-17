@@ -130,7 +130,11 @@ class AdkAgentRunner:
                 state_delta=state_delta,
                 run_config=RunConfig(streaming_mode=StreamingMode.SSE),
             ):
-                for call in event.get_function_calls():
+                # In SSE mode ADK repeats each function call in a partial event before the
+                # final one that actually executes it; report only the executed call, once.
+                for call in [] if event.partial else event.get_function_calls():
+                    if call.id and call.id in calls:
+                        continue
                     record = ToolCallRecord(
                         id=call.id or uuid.uuid4().hex,
                         name=call.name or "",

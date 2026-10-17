@@ -89,7 +89,11 @@ export function SkillsLab() {
       for await (const ev of sse("/skills-lab/message", { session_id: sessionId, message })) {
         if (ev.event === "quota") setQuota(ev.data as QuotaOut);
         else if (ev.event === "delta") setAnswer((a) => a + (ev.data as { text: string }).text);
-        else if (ev.event === "tool_call") setTools((p) => [...p, ev.data as ToolEvent]);
+        else if (ev.event === "tool_call")
+          setTools((p) => {
+            const d = ev.data as ToolEvent;
+            return p.some((t) => t.id === d.id) ? p : [...p, d];
+          });
         else if (ev.event === "tool_result")
           setTools((p) => {
             const d = ev.data as ToolEvent;
@@ -138,8 +142,8 @@ export function SkillsLab() {
                     </div>
                     <p className="ml-6 text-xs text-muted">{skill.description}</p>
                   </label>
-                  <button className="btn-ghost text-xs" onClick={() => runScan(skill.name)}>
-                    Inspect
+                  <button className="btn-ghost text-xs" onClick={() => void runScan(skill.name)}>
+                    View SKILL.md
                   </button>
                 </div>
               ))}
@@ -198,7 +202,7 @@ export function SkillsLab() {
                 {answer ? <SafeMarkdown>{answer}</SafeMarkdown> : <p className="text-sm text-muted">Ask it to use an installed skill.</p>}
               </div>
               <form onSubmit={send} className="mt-2 flex gap-2">
-                <input className="input" value={input} onChange={(e) => setInput(e.target.value)} placeholder="e.g. Summarize report.txt with pdf-summarizer-pro" />
+                <input className="input" value={input} onChange={(e) => setInput(e.target.value)} placeholder={`e.g. Use ${installed[0] ?? "a skill"} on notes.md`} />
                 <button className="btn-primary" disabled={busy || !input.trim()}>
                   Send
                 </button>
@@ -259,34 +263,40 @@ function InspectPanel({ name, result, onClose }: { name: string; result: ScanOut
           close
         </button>
       </div>
-      <div className="mb-2">
-        {result.suspicious ? (
-          <Badge tone="danger">suspicious ({result.max_severity})</Badge>
-        ) : (
-          <Badge tone="ok">looks clean</Badge>
-        )}
-      </div>
-      <ul className="mb-3 space-y-1 text-xs">
-        {result.findings.map((f, i) => (
-          <li key={i}>
-            <span className="font-medium">{f.kind}:</span> {f.message}
-            {f.excerpt && <div className="font-mono text-muted">{f.excerpt}</div>}
-          </li>
-        ))}
-      </ul>
       <div className="mb-3 text-xs">
-        <div className="mb-1 font-medium text-muted">The skill file, as a human reviewer sees it</div>
-        <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded bg-bg p-2 font-mono">
+        <div className="mb-1 font-medium text-muted">
+          SKILL.md, as a human reviewer sees it. Read it carefully: is there anything the
+          description didn&apos;t promise?
+        </div>
+        <pre className="max-h-80 overflow-y-auto whitespace-pre-wrap break-words rounded bg-bg p-2 font-mono">
           {result.as_human_reads}
         </pre>
       </div>
-      <details className="text-xs">
+      <details className="mb-2 text-xs">
         <summary className="cursor-pointer text-muted">
           Reveal what the model actually reads (hidden characters made visible)
         </summary>
-        <pre className="mt-1 max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded bg-bg p-2 font-mono">
+        <pre className="mt-1 max-h-80 overflow-y-auto whitespace-pre-wrap break-words rounded bg-bg p-2 font-mono">
           {result.as_model_reads}
         </pre>
+      </details>
+      <details className="text-xs">
+        <summary className="cursor-pointer text-muted">Run the scanner on it</summary>
+        <div className="mt-2">
+          {result.suspicious ? (
+            <Badge tone="danger">suspicious ({result.max_severity})</Badge>
+          ) : (
+            <Badge tone="ok">looks clean</Badge>
+          )}
+        </div>
+        <ul className="mt-2 space-y-1">
+          {result.findings.map((f, i) => (
+            <li key={i}>
+              <span className="font-medium">{f.kind}:</span> {f.message}
+              {f.excerpt && <div className="font-mono text-muted">{f.excerpt}</div>}
+            </li>
+          ))}
+        </ul>
       </details>
     </div>
   );

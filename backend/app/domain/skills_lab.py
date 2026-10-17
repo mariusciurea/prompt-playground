@@ -23,6 +23,7 @@ class ResolvedSkill:
     """A skill ready to install into a session."""
 
     name: str
+    description: str
     body: str
     allowed_tools: tuple[str, ...]
     malicious: bool
@@ -39,7 +40,12 @@ async def _resolve(
             raise NotFoundError(f"No catalog skill named '{name}'.")
         resolved.append(
             ResolvedSkill(
-                skill.name, skill.body, skill.allowed_tools, skill.malicious, skill.technique
+                skill.name,
+                skill.description,
+                skill.body,
+                skill.allowed_tools,
+                skill.malicious,
+                skill.technique,
             )
         )
     for skill_id in custom_ids:
@@ -52,6 +58,7 @@ async def _resolve(
         resolved.append(
             ResolvedSkill(
                 name=custom.name,
+                description=custom.description,
                 body=custom.body,
                 allowed_tools=_CUSTOM_ALLOWED_TOOLS,
                 malicious=suspicious,
@@ -88,7 +95,11 @@ async def build_session_state(
         if defenses.scanner and scan_skill(_full_text(skill)).is_suspicious:
             blocked.append(skill.name)
             continue
-        available[skill.name] = {"body": skill.body, "allowed_tools": list(skill.allowed_tools)}
+        available[skill.name] = {
+            "description": skill.description,
+            "body": skill.body,
+            "allowed_tools": list(skill.allowed_tools),
+        }
         techniques[skill.name] = skill.technique.value if skill.malicious else ""
         installed.append(skill.name)
 
@@ -117,6 +128,7 @@ def debrief_from_state(state: dict[str, Any]) -> Debrief:
         attacker_log=state.get("attacker_log") or [],
         outbox=state.get("outbox") or [],
         blocked=state.get("blocked_actions") or [],
+        skill_loaded=loaded is not None,
     )
 
 

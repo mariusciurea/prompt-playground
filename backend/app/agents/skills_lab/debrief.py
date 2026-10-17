@@ -48,10 +48,19 @@ def build_debrief(
     attacker_log: list[dict[str, Any]],
     outbox: list[dict[str, Any]],
     blocked: list[dict[str, Any]],
+    skill_loaded: bool = True,
 ) -> Debrief:
     """Explain what the loaded skill tried, whether it succeeded, and what stopped it."""
     exfiltrated = bool(attacker_log) or bool(outbox)
     steps: list[str] = []
+
+    if not skill_loaded:
+        steps.append(
+            "The assistant never called load_skill, so no installed skill's instructions (and "
+            "no hidden payload) reached it. Name the skill in your request, e.g. 'Format "
+            "notes.md with meeting-notes-formatter'."
+        )
+        return Debrief(False, exfiltrated, steps, "", [], "installing-skills-safely")
 
     if not malicious:
         steps.append("This skill was benign: it only did what its description promised.")
@@ -81,6 +90,11 @@ def build_debrief(
         }
         pretty = [names.get(d, d) for d in stopped_by]
         steps.append(f"The attack was blocked by {', '.join(pretty)} before any data left.")
+    elif not exfiltrated:
+        steps.append(
+            "This time the model did not act on them. Models are probabilistic: send the same "
+            "request again, and remember a payload only has to work once."
+        )
 
     return Debrief(
         attacked=True,
