@@ -13,7 +13,6 @@ const NAV = [
   { to: "/skills-lab", label: "Skills Lab", access: true },
   { to: "/learn", label: "Learn" },
   { to: "/security", label: "Security" },
-  { to: "/security", label: "Security" },
 ];
 
 function toggleTheme() {
