@@ -11,6 +11,7 @@ import { Login } from "@/pages/Login";
 import { Playground } from "@/pages/Playground";
 import { Register } from "@/pages/Register";
 import { Reservation } from "@/pages/Reservation";
+import { Security } from "@/pages/Security";
 import { SkillsLab } from "@/pages/SkillsLab";
 import { VerifyEmail } from "@/pages/VerifyEmail";
 
@@ -32,6 +33,7 @@ export function App() {
       >
         <Route index element={<Dashboard />} />
         <Route path="learn" element={<Learn />} />
+        <Route path="security" element={<Security />} />
         <Route
           path="playground"
           element={
