@@ -171,9 +171,15 @@ export function SkillsLab() {
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="text-muted">Installed:</span>
             {installed.map((n) => (
-              <Badge key={n} tone="info">
-                {n}
-              </Badge>
+              <button
+                key={n}
+                type="button"
+                className="rounded bg-accent/15 px-2 py-0.5 text-xs font-medium text-accent hover:bg-accent/25"
+                title="View this skill's contents"
+                onClick={() => void runScan(n)}
+              >
+                {n} · view
+              </button>
             ))}
             {blockedInstall.map((n) => (
               <Badge key={n} tone="danger">
@@ -235,6 +241,8 @@ export function SkillsLab() {
             </div>
           </div>
 
+          {scan && <InspectPanel name={scan.name} result={scan.result} onClose={() => setScan(null)} />}
+
           {debrief && <Debrief debrief={debrief} />}
         </div>
       )}
@@ -266,9 +274,17 @@ function InspectPanel({ name, result, onClose }: { name: string; result: ScanOut
           </li>
         ))}
       </ul>
+      <div className="mb-3 text-xs">
+        <div className="mb-1 font-medium text-muted">The skill file, as a human reviewer sees it</div>
+        <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded bg-bg p-2 font-mono">
+          {result.as_human_reads}
+        </pre>
+      </div>
       <details className="text-xs">
-        <summary className="cursor-pointer text-muted">As the model reads it</summary>
-        <pre className="mt-1 whitespace-pre-wrap break-words rounded bg-bg p-2 font-mono">
+        <summary className="cursor-pointer text-muted">
+          Reveal what the model actually reads (hidden characters made visible)
+        </summary>
+        <pre className="mt-1 max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded bg-bg p-2 font-mono">
           {result.as_model_reads}
         </pre>
       </details>
