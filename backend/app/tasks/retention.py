@@ -12,7 +12,7 @@ from sqlalchemy import CursorResult, delete, not_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.logging import configure_logging
-from app.core.settings import Settings, get_settings
+from app.core.settings import Settings, get_job_settings
 from app.database.base import utcnow
 from app.database.session import create_engine, create_session_factory
 from app.db_models import Cohort, CohortMember, PromptHistory, User
@@ -53,7 +53,7 @@ async def purge_expired_history(factory: Factory, settings: Settings) -> int:
 
 async def run() -> None:
     """Execute every retention task once."""
-    settings = get_settings()
+    settings = get_job_settings()
     engine = create_engine(settings.database_url)
     try:
         factory = create_session_factory(engine)
@@ -66,7 +66,7 @@ async def run() -> None:
 
 def main() -> None:
     """Configure logging and run the retention tasks."""
-    settings = get_settings()
+    settings = get_job_settings()
     configure_logging(settings.log_level, json_format=settings.log_json)
     asyncio.run(run())
 

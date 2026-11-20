@@ -1,4 +1,5 @@
-import { useState } from "react";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
+import { useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { api } from "@/api/client";
@@ -15,6 +16,7 @@ export function Register() {
   const [error, setError] = useState<unknown>(null);
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
+  const botCheck = useRef<TurnstileInstance>();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,6 +29,8 @@ export function Register() {
       });
       setDone(true);
     } catch (err) {
+      setToken(null);
+      botCheck.current?.reset();
       setError(err);
     } finally {
       setBusy(false);
@@ -56,7 +60,7 @@ export function Register() {
         <Field label="Password" htmlFor="password" hint="At least 12 characters.">
           <input id="password" className="input" type="password" autoComplete="new-password" required minLength={12} value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
-        <BotCheck onToken={setToken} />
+        <BotCheck onToken={setToken} widgetRef={botCheck} />
         <ErrorBanner error={error} />
         <button className="btn-primary mt-3 w-full" disabled={busy}>
           {busy ? "Creating…" : "Create account"}

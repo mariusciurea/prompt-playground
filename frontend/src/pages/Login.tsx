@@ -1,4 +1,5 @@
-import { useState } from "react";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { ApiError, api } from "@/api/client";
@@ -16,6 +17,7 @@ export function Login() {
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
+  const botCheck = useRef<TurnstileInstance>();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,6 +36,10 @@ export function Login() {
       await refresh();
       navigate("/");
     } catch (err) {
+      // The server already spent this Turnstile token; get a fresh one for the next attempt
+      // (e.g. the follow-up submit with the authenticator code).
+      setToken(null);
+      botCheck.current?.reset();
       if (err instanceof ApiError && err.code === "totp_required") {
         setNeedsTotp(true);
       } else {
@@ -58,7 +64,7 @@ export function Login() {
             <input className="input" inputMode="numeric" pattern="\d{6}" value={totp} onChange={(e) => setTotp(e.target.value)} />
           </Field>
         )}
-        <BotCheck onToken={setToken} />
+        <BotCheck onToken={setToken} widgetRef={botCheck} />
         <ErrorBanner error={error} />
         <button className="btn-primary mt-3 w-full" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}

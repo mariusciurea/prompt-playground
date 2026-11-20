@@ -1,7 +1,7 @@
 /** Centered card layout and Turnstile widget for the public auth pages. */
 
-import { Turnstile } from "@marsidev/react-turnstile";
-import type { ReactNode } from "react";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+import type { ReactNode, RefObject } from "react";
 
 const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
 
@@ -22,12 +22,30 @@ export function AuthLayout({ title, children }: { title: string; children: React
   );
 }
 
-/** Renders the Turnstile challenge when configured; otherwise a no-op (dev). */
-export function BotCheck({ onToken }: { onToken: (token: string | null) => void }) {
+/**
+ * Renders the Turnstile challenge when configured; otherwise a no-op (dev).
+ *
+ * Turnstile tokens are single-use: the server's siteverify call consumes them. Callers must
+ * call `widgetRef.current?.reset()` (and clear their token) after every submit attempt that
+ * did not navigate away, or the next submit re-sends a spent token and fails the bot check.
+ */
+export function BotCheck({
+  onToken,
+  widgetRef,
+}: {
+  onToken: (token: string | null) => void;
+  widgetRef: RefObject<TurnstileInstance | undefined>;
+}) {
   if (!SITE_KEY) return null;
   return (
     <div className="mb-3">
-      <Turnstile siteKey={SITE_KEY} onSuccess={onToken} onExpire={() => onToken(null)} />
+      <Turnstile
+        ref={widgetRef}
+        siteKey={SITE_KEY}
+        onSuccess={onToken}
+        onExpire={() => onToken(null)}
+        onError={() => onToken(null)}
+      />
     </div>
   );
 }

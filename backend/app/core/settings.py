@@ -2,7 +2,7 @@
 
 from enum import StrEnum
 from functools import lru_cache
-from typing import Self
+from typing import ClassVar, Self
 from zoneinfo import ZoneInfo
 
 from pydantic import Field, SecretStr, field_validator, model_validator
@@ -37,7 +37,13 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="forbid",
+        # Validation errors would otherwise echo the raw input, secrets included, into logs.
+        hide_input_in_errors=True,
     )
+
+    # Whether this process serves the web app. Only then does production need Redis (rate
+    # limits, sessions), Turnstile and an e-mail transport; background jobs use none of them.
+    serves_web: ClassVar[bool] = True
 
     app_name: str = Field(default="AI Playground", description="Human-readable application name.")
     environment: Environment = Field(default=Environment.DEVELOPMENT)
@@ -127,7 +133,7 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _check_production_requirements(self) -> Self:
-        if not self.is_production:
+        if not self.is_production or not self.serves_web:
             return self
         missing = [
             name
@@ -153,7 +159,23 @@ class Settings(BaseSettings):
         return self
 
 
+class JobSettings(Settings):
+    """Settings for background jobs (cron) that never serve HTTP or send e-mail.
+
+    They skip the web-only production checks, so a job's service needs only the variables it
+    actually uses (database, secrets) instead of copies of every web secret.
+    """
+
+    serves_web: ClassVar[bool] = False
+
+
 @lru_cache
 def get_settings() -> Settings:
     """Return the process-wide settings, loaded once."""
     return Settings()  # required values come from the environment
+
+
+@lru_cache
+def get_job_settings() -> JobSettings:
+    """Return the settings for a background job, loaded once."""
+    return JobSettings()

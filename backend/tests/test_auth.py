@@ -244,3 +244,32 @@ def test_production_requires_hardening_settings(database_url):
             jwt_secret_key="x" * 40,
             totp_encryption_key="k",
         )
+
+
+def test_background_jobs_skip_web_only_production_checks(database_url):
+    """The retention cron needs no Redis/Turnstile/e-mail, so production must not demand them."""
+    from app.core.settings import JobSettings
+
+    settings = JobSettings(
+        _env_file=None,  # type: ignore[call-arg]
+        environment="production",
+        database_url=database_url,
+        jwt_secret_key="x" * 40,
+        totp_encryption_key="k",
+    )
+    assert settings.is_production
+
+
+def test_settings_errors_do_not_echo_secrets(database_url):
+    import pytest
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings(
+            _env_file=None,  # type: ignore[call-arg]
+            environment="production",
+            database_url=database_url,
+            jwt_secret_key="super-secret-signing-key-" + "x" * 20,
+            totp_encryption_key="k",
+        )
+    assert "super-secret-signing-key" not in str(excinfo.value)

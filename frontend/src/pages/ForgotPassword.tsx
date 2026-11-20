@@ -1,4 +1,5 @@
-import { useState } from "react";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { api } from "@/api/client";
@@ -10,6 +11,7 @@ export function ForgotPassword() {
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [done, setDone] = useState(false);
+  const botCheck = useRef<TurnstileInstance>();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,6 +23,8 @@ export function ForgotPassword() {
       });
       setDone(true);
     } catch (err) {
+      setToken(null);
+      botCheck.current?.reset();
       setError(err);
     }
   }
@@ -36,7 +40,7 @@ export function ForgotPassword() {
           <Field label="E-mail" htmlFor="email">
             <input id="email" className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
-          <BotCheck onToken={setToken} />
+          <BotCheck onToken={setToken} widgetRef={botCheck} />
           <ErrorBanner error={error} />
           <button className="btn-primary mt-3 w-full">Send reset link</button>
         </form>
